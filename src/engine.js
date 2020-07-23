@@ -51,6 +51,7 @@ export default class Engine extends React.Component {
     }
 
     draw = () => {
+        
         this.clearCanvas(this.state.ctx)
         //get current roatation amount and create matrix needed for XZ plane rotation (left to right)
         let heading = this.degreesToRadians(this.props.xRotate)
