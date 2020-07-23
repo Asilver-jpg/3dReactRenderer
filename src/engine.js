@@ -36,9 +36,9 @@ export default class Engine extends React.Component {
     }
 
     drawTriangle(context, t, matrix){
-       let v1= matrix.transformVertex(t.v1, matrix)
-       let v2= matrix.transformVertex(t.v2, matrix)
-       let v3= matrix.transformVertex(t.v3, matrix)
+       let v1= matrix.transformVertex(t.v1)
+       let v2= matrix.transformVertex(t.v2)
+       let v3= matrix.transformVertex(t.v3)
        context.beginPath()
        context.moveTo(v1.x, v1.y)
        context.lineTo(v2.x, v2.y)
@@ -51,19 +51,25 @@ export default class Engine extends React.Component {
     }
 
     draw = () => {
+        this.clearCanvas(this.state.ctx)
         //get current roatation amount and create matrix needed for XZ plane rotation (left to right)
-        console.log(this.props.xRotate)
         let heading = this.degreesToRadians(this.props.xRotate)
-   
-        let transform = new Matrix3([Math.cos(heading),0, -Math.sin(heading),
+        let pitch= this.degreesToRadians(this.props.yRotate)
+        let transform = new Matrix3([Math.cos(heading),0, -1 * Math.sin(heading),
                                     0,1,0,
                                     Math.sin(heading), 0, Math.cos(heading)])
-              
+        let pitchTransform= new Matrix3([1,0,0,
+                                        0, Math.cos(pitch), Math.sin(pitch),
+                                        0, -1* Math.sin(pitch), Math.cos(pitch)])      
         if (this.state.canvas !== "") {
             this.state.triangleList.forEach(t => {
                this.drawTriangle(this.state.ctx, t, transform)
             })
         }
+    }
+
+    clearCanvas = (context) => {console.log(context)
+        context.clearRect(-this.state.width/2, -this.state.height/2, 450, 600)
     }
 
     degreesToRadians=(deg)=>{
@@ -125,6 +131,7 @@ class Triangle {
 }
 
 class Matrix3{
+    //takes in an array of ints with a length of 9
     constructor(values){
         this.values=values
     }
@@ -134,7 +141,7 @@ class Matrix3{
         for(let row=0; row<3; row++){
             for(let col=0; col<3; col++){
                 for (let i=0; i<3; i++){
-                result[row *3 +col] += this.values[row *3 +i] * matrix[row*2 +col]
+                result[row *3 +col] += this.values[row *3 +i] * matrix.values[i * 3 +col]
                 }
             }
         }
@@ -142,11 +149,11 @@ class Matrix3{
     }
 
     //takes in a vertex and transforms it based on matrix values
-    transformVertex=(vertexIn, values)=>{
+    transformVertex=(vertexIn)=>{
         return new Vertex(
-            vertexIn.x *values[0] + vertexIn.y*values[3] +vertexIn.z *values[6],
-            vertexIn.x *values[1] + vertexIn.y *values[4] + vertexIn.z*values[7],
-            vertexIn.x * values[2] + vertexIn.y +values[5] + vertexIn.z *values[8]
+            vertexIn.x *this.values[0] + vertexIn.y* this.values[3] + vertexIn.z * this.values[6],
+            vertexIn.x *this.values[1] + vertexIn.y * this.values[4] + vertexIn.z* this.values[7],
+            vertexIn.x * this.values[2] + vertexIn.y + this.values[5] + vertexIn.z * this.values[8]
         )
     }
 }
