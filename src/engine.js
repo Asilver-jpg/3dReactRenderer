@@ -11,6 +11,7 @@ export default class Engine extends React.Component {
         loop: ""
     }
     componentDidMount() {
+        
         let mainCanvas = document.getElementById("canvas")
         let mainContext = mainCanvas.getContext("2d")
         let canvasWidth = mainCanvas.width
@@ -21,8 +22,6 @@ export default class Engine extends React.Component {
         //change this line to change where the drawings will be positioned, for demos sake it is set default to the middle
         //removing this will set the origin to the top left corner
         this.state.ctx.translate(this.state.width / 2, this.state.height / 2)
-        
-        
         })
     }
 
@@ -44,24 +43,28 @@ export default class Engine extends React.Component {
        context.lineTo(v2.x, v2.y)
        context.lineTo(v3.x, v3.y)
        context.lineTo(v1.x,v1.y)
-       context.fillStyle = 'rgba(0,0,0,0)'
+       context.fillStyle = t.color
        context.fill()
        context.fillStyle='rgb(0,0,0)'
        context.stroke()
     }
 
     draw = () => {
-        
+       
         this.clearCanvas(this.state.ctx)
         //get current roatation amount and create matrix needed for XZ plane rotation (left to right)
         let heading = this.degreesToRadians(this.props.xRotate)
         let pitch= this.degreesToRadians(this.props.yRotate)
-        let transform = new Matrix3([Math.cos(heading),0, -1 * Math.sin(heading),
+        let headingTransform = new Matrix3([Math.cos(heading),0, -1 * Math.sin(heading),
                                     0,1,0,
                                     Math.sin(heading), 0, Math.cos(heading)])
         let pitchTransform= new Matrix3([1,0,0,
                                         0, Math.cos(pitch), Math.sin(pitch),
-                                        0, -1* Math.sin(pitch), Math.cos(pitch)])      
+                                        0, -1* Math.sin(pitch), Math.cos(pitch)])  
+       
+
+        let transform = headingTransform.multiply(pitchTransform)    
+   
         if (this.state.canvas !== "") {
             this.state.triangleList.forEach(t => {
                this.drawTriangle(this.state.ctx, t, transform)
@@ -69,7 +72,7 @@ export default class Engine extends React.Component {
         }
     }
 
-    clearCanvas = (context) => {console.log(context)
+    clearCanvas = (context) => {
         context.clearRect(-this.state.width/2, -this.state.height/2, 450, 600)
     }
 
@@ -94,9 +97,7 @@ class Vertex {
         this.x = x
         this.y = y
         this.z = z
-    }
-
-    
+    }    
 }
 
 class Triangle {
@@ -109,8 +110,6 @@ class Triangle {
     //creates an equilateral tetrahedron each side with a different color
     static createEqualTetrahedron = (val) => {
         let result = []
-
-
         result.push(new Triangle(new Vertex(val, val, val),
             new Vertex(-1*val, -1*val, val),
             new Vertex(-1*val, val, -1*val),
@@ -137,14 +136,20 @@ class Matrix3{
         this.values=values
     }
 
-    multiply=(matrix)=>{
-        let result=[]
-        for(let row=0; row<3; row++){
-            for(let col=0; col<3; col++){
-                for (let i=0; i<3; i++){
-                result[row *3 +col] += this.values[row *3 +i] * matrix.values[i * 3 +col]
-                }
-            }
+    multiply=(other)=>{
+        let result=[0,0,0,0,0,0,0,0,0]
+        for (let row = 0; row < 3; row++) {
+            for (let col = 0; col < 3; col++) {
+                for (let i = 0; i < 3; i++) {
+                    let x= this.values[row*3+i]
+                    let y= other.values[i * 3 + col]
+                    
+                    result[row * 3 +col] +=
+                        this.values[row * 3 + i] * other.values[i * 3 + col];
+                       
+                
+               }
+           }
         }
         return new Matrix3(result)
     }
